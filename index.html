@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kundali Milan — Vedic Compatibility Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --cream: #F7F3ED;
+    --cream-dark: #EDE7DC;
+    --ink: #1C1410;
+    --ink-soft: #4A3F35;
+    --ink-muted: #8A7A6E;
+    --gold: #C4933F;
+    --gold-light: #E8C97A;
+    --gold-pale: #F5EDD6;
+    --rust: #B05A2F;
+    --teal: #2D6B5E;
+    --teal-light: #4A9B89;
+    --red-warn: #C0392B;
+    --border: rgba(100, 80, 50, 0.15);
+    --border-strong: rgba(100, 80, 50, 0.3);
+    --shadow: 0 4px 24px rgba(28, 20, 16, 0.08);
+    --shadow-lg: 0 12px 48px rgba(28, 20, 16, 0.14);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  /* ── Decorative background ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(circle at 15% 20%, rgba(196,147,63,0.07) 0%, transparent 50%),
+      radial-gradient(circle at 85% 80%, rgba(45,107,94,0.06) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .page-wrap { position: relative; z-index: 1; max-width: 780px; margin: 0 auto; padding: 0 1.5rem 4rem; }
+
+  /* ── Header ── */
+  header { text-align: center; padding: 4rem 0 3rem; }
+
+  .header-ornament {
+    display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: 1.5rem;
+  }
+  .ornament-line { width: 60px; height: 1px; background: linear-gradient(to right, transparent, var(--gold)); }
+  .ornament-line.right { background: linear-gradient(to left, transparent, var(--gold)); }
+  .ornament-symbol { color: var(--gold); font-size: 20px; }
+
+  h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2.4rem, 6vw, 3.8rem);
+    font-weight: 300;
+    letter-spacing: 0.04em;
+    line-height: 1.15;
+    color: var(--ink);
+    margin-bottom: 0.6rem;
+  }
+  h1 em { font-style: italic; color: var(--gold); }
+
+  .header-sub {
+    font-size: 0.875rem;
+    color: var(--ink-muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 400;
+  }
+
+  /* ── Card ── */
+  .card {
+    background: #FEFCF8;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem 2.5rem;
+    box-shadow: var(--shadow);
+    margin-bottom: 1.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(to right, var(--gold-light), var(--gold), var(--rust));
+  }
+
+  /* ── Section title ── */
+  .section-tag {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--gold); font-weight: 500; margin-bottom: 1.75rem;
+  }
+  .section-tag::before, .section-tag::after {
+    content: ''; display: block; width: 20px; height: 1px; background: var(--gold-light);
+  }
+
+  /* ── Persons grid ── */
+  .persons-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+  @media (max-width: 560px) { .persons-grid { grid-template-columns: 1fr; } }
+
+  .person-section { }
+
+  .person-label {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.15rem;
+    font-weight: 500;
+    color: var(--ink-soft);
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .person-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--gold);
+    flex-shrink: 0;
+  }
+  .person-dot.two { background: var(--teal); }
+
+  /* ── Fields ── */
+  .field { margin-bottom: 1rem; }
+  .field label {
+    display: block;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 5px;
+    font-weight: 500;
+  }
+  .field input[type="text"],
+  .field input[type="date"],
+  .field input[type="time"] {
+    width: 100%;
+    padding: 10px 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    color: var(--ink);
+    background: var(--cream);
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    -webkit-appearance: none;
+  }
+  .field input:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(196,147,63,0.12);
+  }
+
+  /* ── Location autocomplete ── */
+  .location-wrap { position: relative; }
+  .autocomplete-list {
+    position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 100;
+    background: #FEFCF8;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    box-shadow: var(--shadow-lg);
+    max-height: 220px;
+    overflow-y: auto;
+    display: none;
+  }
+  .autocomplete-list.open { display: block; }
+  .ac-item {
+    padding: 9px 14px;
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+    line-height: 1.4;
+  }
+  .ac-item:last-child { border-bottom: none; }
+  .ac-item:hover, .ac-item.selected { background: var(--gold-pale); color: var(--ink); }
+  .ac-item .ac-main { font-weight: 500; color: var(--ink); }
+  .ac-item .ac-sub { font-size: 0.75rem; color: var(--ink-muted); margin-top: 1px; }
+  .ac-spinner { padding: 10px 14px; font-size: 0.8rem; color: var(--ink-muted); font-style: italic; }
+
+  /* ── Nakshatra badge ── */
+  .nk-badge {
+    display: none;
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: var(--gold-pale);
+    border: 1px solid rgba(196,147,63,0.25);
+    border-radius: 8px;
+    font-size: 0.8rem;
+  }
+  .nk-badge.visible { display: block; }
+  .nk-badge .nk-name { font-weight: 500; color: var(--ink); font-size: 0.88rem; margin-bottom: 2px; }
+  .nk-badge .nk-meta { color: var(--ink-muted); font-size: 0.75rem; }
+
+  /* ── Divider between persons ── */
+  .persons-divider {
+    display: none;
+    width: 1px; background: var(--border); margin: 0 auto;
+  }
+
+  /* ── Calculate button ── */
+  .calc-btn-wrap { text-align: center; margin-top: 2rem; }
+  .calc-btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 14px 3rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--cream);
+    background: linear-gradient(135deg, var(--ink-soft) 0%, var(--ink) 100%);
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+    box-shadow: 0 4px 20px rgba(28,20,16,0.2);
+  }
+  .calc-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(28,20,16,0.28); }
+  .calc-btn:active { transform: translateY(0); }
+  .calc-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+  .btn-star { font-size: 14px; }
+
+  /* ── Error ── */
+  .error-msg {
+    display: none;
+    text-align: center;
+    color: var(--red-warn);
+    font-size: 0.85rem;
+    margin-top: 1rem;
+    padding: 10px;
+    background: rgba(192,57,43,0.06);
+    border-radius: 8px;
+    border: 1px solid rgba(192,57,43,0.15);
+  }
+  .error-msg.show { display: block; }
+
+  /* ── Results ── */
+  #results { display: none; animation: fadeUp 0.5s ease; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ── Score hero ── */
+  .score-hero {
+    text-align: center;
+    padding: 2.5rem 1rem 2rem;
+  }
+  .couple-names {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.5rem;
+    font-weight: 400;
+    color: var(--ink-soft);
+    margin-bottom: 2rem;
+    letter-spacing: 0.02em;
+  }
+  .couple-names .amp { color: var(--gold); font-style: italic; margin: 0 0.5rem; }
+
+  .score-ring-wrap { position: relative; display: inline-block; margin-bottom: 1rem; }
+  .score-ring {
+    width: 130px; height: 130px;
+    border-radius: 50%;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    border: 3px solid var(--gold);
+    background: var(--gold-pale);
+    position: relative;
+  }
+  .score-ring::before {
+    content: ''; position: absolute;
+    inset: 6px; border-radius: 50%;
+    border: 1px solid rgba(196,147,63,0.3);
+  }
+  .score-big { font-family: 'Cormorant Garamond', serif; font-size: 3rem; font-weight: 300; line-height: 1; color: var(--ink); }
+  .score-denom { font-size: 0.75rem; color: var(--ink-muted); letter-spacing: 0.08em; }
+
+  .score-verdict { font-family: 'Cormorant Garamond', serif; font-size: 1.6rem; font-weight: 400; margin-bottom: 4px; }
+  .score-desc { font-size: 0.82rem; color: var(--ink-muted); }
+
+  /* ── Koota grid ── */
+  .kootas-title {
+    font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--ink-muted); margin-bottom: 1rem; text-align: center;
+  }
+  .koota-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  @media (max-width: 560px) { .koota-grid { grid-template-columns: repeat(2, 1fr); } }
+
+  .koota-cell {
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 10px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .koota-cell::after {
+    content: '';
+    position: absolute; bottom: 0; left: 0; right: 0;
+    height: 3px;
+    border-radius: 0 0 10px 10px;
+  }
+  .koota-cell.good::after { background: var(--teal); }
+  .koota-cell.mid::after { background: var(--gold); }
+  .koota-cell.bad::after { background: var(--rust); }
+
+  .koota-score-val { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 500; line-height: 1; }
+  .koota-score-val.good { color: var(--teal); }
+  .koota-score-val.mid { color: var(--gold); }
+  .koota-score-val.bad { color: var(--rust); }
+  .koota-max { font-size: 0.7rem; color: var(--ink-muted); }
+  .koota-cell-name { font-size: 0.72rem; font-weight: 500; color: var(--ink-soft); margin-top: 4px; }
+  .koota-cell-desc { font-size: 0.65rem; color: var(--ink-muted); margin-top: 2px; line-height: 1.3; }
+
+  /* ── Dosha warnings ── */
+  .dosha-section { margin-top: 1.5rem; }
+  .dosha-item {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 12px 14px; margin-bottom: 8px;
+    background: rgba(176,90,47,0.06);
+    border: 1px solid rgba(176,90,47,0.2);
+    border-radius: 8px;
+    font-size: 0.82rem;
+    color: var(--rust);
+    line-height: 1.5;
+  }
+  .dosha-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .dosha-text strong { display: block; font-weight: 500; margin-bottom: 2px; }
+
+  .all-good {
+    display: flex; gap: 10px; align-items: center;
+    padding: 12px 14px;
+    background: rgba(45,107,94,0.06);
+    border: 1px solid rgba(45,107,94,0.2);
+    border-radius: 8px;
+    font-size: 0.82rem;
+    color: var(--teal);
+  }
+
+  /* ── Footer ── */
+  footer {
+    text-align: center;
+    padding: 2rem 0 1rem;
+    font-size: 0.75rem;
+    color: var(--ink-muted);
+    line-height: 1.8;
+  }
+  footer a { color: var(--gold); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  /* ── Loading spinner ── */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner {
+    display: inline-block; width: 14px; height: 14px;
+    border: 2px solid rgba(247,243,237,0.3);
+    border-top-color: var(--cream);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  /* ── Progress bar ── */
+  .progress-bar-bg {
+    width: 100%; height: 6px;
+    background: var(--border);
+    border-radius: 3px; margin-top: 1.5rem; overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%; border-radius: 3px;
+    background: linear-gradient(to right, var(--gold-light), var(--gold));
+    transition: width 1s ease;
+  }
+</style>
+</head>
+<body>
+
+<div class="page-wrap">
+
+  <header>
+    <div class="header-ornament">
+      <div class="ornament-line"></div>
+      <div class="ornament-symbol">✦</div>
+      <div class="ornament-line right"></div>
+    </div>
+    <h1>Kundali <em>Milan</em></h1>
+    <p class="header-sub">Vedic Ashtakoot Compatibility · 36 Points</p>
+  </header>
+
+  <!-- Input card -->
+  <div class="card">
+    <div style="text-align:center">
+      <span class="section-tag">Birth Details</span>
+    </div>
+
+    <div class="persons-grid">
+      <!-- Person 1 -->
+      <div class="person-section">
+        <div class="person-label"><span class="person-dot"></span> First person</div>
+        <div class="field">
+          <label>Name</label>
+          <input type="text" id="name1" placeholder="Enter name">
+        </div>
+        <div class="field">
+          <label>Date of birth</label>
+          <input type="date" id="dob1">
+        </div>
+        <div class="field">
+          <label>Time of birth</label>
+          <input type="time" id="tob1">
+        </div>
+        <div class="field">
+          <label>Place of birth</label>
+          <div class="location-wrap">
+            <input type="text" id="place1" placeholder="Type city name…" autocomplete="off">
+            <div class="autocomplete-list" id="ac1"></div>
+          </div>
+        </div>
+        <div class="nk-badge" id="nkbadge1">
+          <div class="nk-name" id="nkname1">—</div>
+          <div class="nk-meta" id="nkmeta1">—</div>
+        </div>
+      </div>
+
+      <!-- Person 2 -->
+      <div class="person-section">
+        <div class="person-label"><span class="person-dot two"></span> Second person</div>
+        <div class="field">
+          <label>Name</label>
+          <input type="text" id="name2" placeholder="Enter name">
+        </div>
+        <div class="field">
+          <label>Date of birth</label>
+          <input type="date" id="dob2">
+        </div>
+        <div class="field">
+          <label>Time of birth</label>
+          <input type="time" id="tob2">
+        </div>
+        <div class="field">
+          <label>Place of birth</label>
+          <div class="location-wrap">
+            <input type="text" id="place2" placeholder="Type city name…" autocomplete="off">
+            <div class="autocomplete-list" id="ac2"></div>
+          </div>
+        </div>
+        <div class="nk-badge" id="nkbadge2">
+          <div class="nk-name" id="nkname2">—</div>
+          <div class="nk-meta" id="nkmeta2">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="calc-btn-wrap">
+      <button class="calc-btn" id="calcBtn" onclick="calculate()">
+        <span class="btn-star">✦</span>
+        <span id="btnText">Calculate compatibility</span>
+      </button>
+    </div>
+    <div class="error-msg" id="errMsg"></div>
+  </div>
+
+  <!-- Results -->
+  <div id="results">
+    <div class="card">
+      <div class="score-hero">
+        <div class="couple-names">
+          <span id="res-name1">—</span>
+          <span class="amp">&</span>
+          <span id="res-name2">—</span>
+        </div>
+
+        <div class="score-ring-wrap">
+          <div class="score-ring">
+            <span class="score-big" id="scoreNum">0</span>
+            <span class="score-denom">out of 36</span>
+          </div>
+        </div>
+
+        <div class="score-verdict" id="scoreVerdict">—</div>
+        <div class="score-desc" id="scoreDesc">—</div>
+
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="progressBar" style="width:0%"></div>
+        </div>
+      </div>
+
+      <div class="kootas-title">Ashtakoot breakdown</div>
+      <div class="koota-grid" id="kootaGrid"></div>
+
+      <div class="dosha-section" id="doshaSection"></div>
+    </div>
+
+    <div style="text-align:center; margin-top: -0.5rem; margin-bottom: 1.5rem;">
+      <button class="calc-btn" onclick="resetForm()" style="background: linear-gradient(135deg, #8A7A6E, #4A3F35); font-size: 0.78rem; padding: 11px 2rem;">
+        ← Calculate again
+      </button>
+    </div>
+  </div>
+
+  <footer>
+    <p>Calculations use Jean Meeus's astronomical formula with Lahiri ayanamsa correction.</p>
+    <p style="margin-top:4px">For reference only · Consult a qualified Jyotishi for important decisions.</p>
+  </footer>
+
+</div>
+
+<script>
+// ── Nakshatra data ──
+const NK = [
+  {name:"Ashwini",rashi:"Aries",lord:"Ketu",gana:"Deva",yoni:"Horse",nadi:"Aadi"},
+  {name:"Bharani",rashi:"Aries",lord:"Venus",gana:"Manav",yoni:"Elephant",nadi:"Madhya"},
+  {name:"Krittika",rashi:"Aries",lord:"Sun",gana:"Rakshasa",yoni:"Goat",nadi:"Antya"},
+  {name:"Rohini",rashi:"Taurus",lord:"Moon",gana:"Manav",yoni:"Snake",nadi:"Aadi"},
+  {name:"Mrigashira",rashi:"Taurus",lord:"Mars",gana:"Deva",yoni:"Snake",nadi:"Madhya"},
+  {name:"Ardra",rashi:"Gemini",lord:"Rahu",gana:"Manav",yoni:"Dog",nadi:"Antya"},
+  {name:"Punarvasu",rashi:"Gemini",lord:"Jupiter",gana:"Deva",yoni:"Cat",nadi:"Aadi"},
+  {name:"Pushya",rashi:"Cancer",lord:"Saturn",gana:"Deva",yoni:"Goat",nadi:"Madhya"},
+  {name:"Ashlesha",rashi:"Cancer",lord:"Mercury",gana:"Rakshasa",yoni:"Cat",nadi:"Antya"},
+  {name:"Magha",rashi:"Leo",lord:"Ketu",gana:"Rakshasa",yoni:"Rat",nadi:"Aadi"},
+  {name:"Purva Phalguni",rashi:"Leo",lord:"Venus",gana:"Manav",yoni:"Rat",nadi:"Madhya"},
+  {name:"Uttara Phalguni",rashi:"Leo",lord:"Sun",gana:"Manav",yoni:"Cow",nadi:"Antya"},
+  {name:"Hasta",rashi:"Virgo",lord:"Moon",gana:"Deva",yoni:"Buffalo",nadi:"Aadi"},
+  {name:"Chitra",rashi:"Virgo",lord:"Mars",gana:"Rakshasa",yoni:"Tiger",nadi:"Madhya"},
+  {name:"Swati",rashi:"Libra",lord:"Rahu",gana:"Deva",yoni:"Buffalo",nadi:"Antya"},
+  {name:"Vishakha",rashi:"Libra",lord:"Jupiter",gana:"Rakshasa",yoni:"Tiger",nadi:"Aadi"},
+  {name:"Anuradha",rashi:"Scorpio",lord:"Saturn",gana:"Deva",yoni:"Deer",nadi:"Madhya"},
+  {name:"Jyeshtha",rashi:"Scorpio",lord:"Mercury",gana:"Rakshasa",yoni:"Deer",nadi:"Antya"},
+  {name:"Mula",rashi:"Sagittarius",lord:"Ketu",gana:"Rakshasa",yoni:"Dog",nadi:"Aadi"},
+  {name:"Purva Ashadha",rashi:"Sagittarius",lord:"Venus",gana:"Manav",yoni:"Monkey",nadi:"Madhya"},
+  {name:"Uttara Ashadha",rashi:"Sagittarius",lord:"Sun",gana:"Manav",yoni:"Mongoose",nadi:"Antya"},
+  {name:"Shravana",rashi:"Capricorn",lord:"Moon",gana:"Deva",yoni:"Monkey",nadi:"Aadi"},
+  {name:"Dhanishtha",rashi:"Capricorn",lord:"Mars",gana:"Rakshasa",yoni:"Lion",nadi:"Madhya"},
+  {name:"Shatabhisha",rashi:"Aquarius",lord:"Rahu",gana:"Rakshasa",yoni:"Horse",nadi:"Antya"},
+  {name:"Purva Bhadrapada",rashi:"Aquarius",lord:"Jupiter",gana:"Manav",yoni:"Lion",nadi:"Aadi"},
+  {name:"Uttara Bhadrapada",rashi:"Pisces",lord:"Saturn",gana:"Manav",yoni:"Cow",nadi:"Madhya"},
+  {name:"Revati",rashi:"Pisces",lord:"Mercury",gana:"Deva",yoni:"Elephant",nadi:"Antya"}
+];
+
+const RASHIS = ["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"];
+const RASHI_VARNA = {Aries:"Kshatriya",Taurus:"Vaishya",Gemini:"Shudra",Cancer:"Brahmin",Leo:"Kshatriya",Virgo:"Vaishya",Libra:"Shudra",Scorpio:"Brahmin",Sagittarius:"Kshatriya",Capricorn:"Vaishya",Aquarius:"Shudra",Pisces:"Brahmin"};
+const VARNA_ORDER = {Brahmin:4,Kshatriya:3,Vaishya:2,Shudra:1};
+const RASHI_VASHYA = {Aries:"Chatushpad",Taurus:"Chatushpad",Gemini:"Manav",Cancer:"Jalchar",Leo:"Vanchar",Virgo:"Manav",Libra:"Manav",Scorpio:"Keeta",Sagittarius:"Chatushpad",Capricorn:"Chatushpad",Aquarius:"Manav",Pisces:"Jalchar"};
+const RASHI_LORD = {Aries:"Mars",Taurus:"Venus",Gemini:"Mercury",Cancer:"Moon",Leo:"Sun",Virgo:"Mercury",Libra:"Venus",Scorpio:"Mars",Sagittarius:"Jupiter",Capricorn:"Saturn",Aquarius:"Saturn",Pisces:"Jupiter"};
+const PF = {Sun:{f:["Moon","Mars","Jupiter"],n:["Mercury"],e:["Venus","Saturn"]},Moon:{f:["Sun","Mercury"],n:["Mars","Jupiter","Venus","Saturn"],e:[]},Mars:{f:["Sun","Moon","Jupiter"],n:["Venus","Saturn"],e:["Mercury"]},Mercury:{f:["Sun","Venus"],n:["Mars","Saturn","Jupiter"],e:["Moon"]},Jupiter:{f:["Sun","Moon","Mars"],n:["Saturn"],e:["Mercury","Venus"]},Venus:{f:["Mercury","Saturn"],n:["Mars","Jupiter"],e:["Sun","Moon"]},Saturn:{f:["Mercury","Venus"],n:["Jupiter"],e:["Sun","Moon","Mars"]},Rahu:{f:["Mercury","Venus","Saturn"],n:["Jupiter"],e:["Sun","Moon","Mars"]},Ketu:{f:["Mercury","Venus","Saturn"],n:["Jupiter"],e:["Sun","Moon","Mars"]}};
+const YONI_ENEMY = {Horse:"Buffalo",Elephant:"Lion",Goat:"Dog",Snake:"Mongoose",Dog:"Goat",Cat:"Rat",Rat:"Cat",Cow:"Tiger",Buffalo:"Horse",Tiger:"Cow",Deer:"Dog",Monkey:"Lion",Lion:"Elephant",Mongoose:"Snake"};
+
+// ── Stored geocoded locations ──
+const geoData = { 1: null, 2: null };
+
+// ── Autocomplete ──
+let acTimers = {};
+
+function setupAutocomplete(inputId, listId, personNum) {
+  const input = document.getElementById(inputId);
+  const list = document.getElementById(listId);
+  let selIdx = -1;
+
+  input.addEventListener('input', () => {
+    const q = input.value.trim();
+    geoData[personNum] = null;
+    if (q.length < 2) { list.classList.remove('open'); return; }
+    clearTimeout(acTimers[personNum]);
+    list.innerHTML = '<div class="ac-spinner">Searching…</div>';
+    list.classList.add('open');
+    acTimers[personNum] = setTimeout(() => fetchPlaces(q, list, input, personNum), 400);
+  });
+
+  input.addEventListener('keydown', e => {
+    const items = list.querySelectorAll('.ac-item');
+    if (e.key === 'ArrowDown') { selIdx = Math.min(selIdx+1, items.length-1); highlight(items, selIdx); e.preventDefault(); }
+    else if (e.key === 'ArrowUp') { selIdx = Math.max(selIdx-1, 0); highlight(items, selIdx); e.preventDefault(); }
+    else if (e.key === 'Enter' && selIdx >= 0) { items[selIdx].click(); e.preventDefault(); }
+    else if (e.key === 'Escape') { list.classList.remove('open'); }
+  });
+
+  document.addEventListener('click', e => { if (!input.contains(e.target) && !list.contains(e.target)) list.classList.remove('open'); });
+
+  function highlight(items, idx) { items.forEach((it,i) => it.classList.toggle('selected', i===idx)); }
+}
+
+async function fetchPlaces(q, list, input, personNum) {
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=6&addressdetails=1`;
+    const res = await fetch(url, { headers: { 'User-Agent': 'KundaliMilan/1.0' } });
+    const data = await res.json();
+    list.innerHTML = '';
+    if (!data.length) { list.innerHTML = '<div class="ac-spinner">No results found</div>'; return; }
+    data.forEach(place => {
+      const main = place.address.city || place.address.town || place.address.village || place.address.county || place.display_name.split(',')[0];
+      const sub = [place.address.state, place.address.country].filter(Boolean).join(', ');
+      const item = document.createElement('div');
+      item.className = 'ac-item';
+      item.innerHTML = `<div class="ac-main">${main}</div><div class="ac-sub">${sub}</div>`;
+      item.addEventListener('click', () => {
+        input.value = main + (sub ? ', ' + sub : '');
+        geoData[personNum] = { lat: parseFloat(place.lat), lon: parseFloat(place.lon), name: input.value };
+        list.classList.remove('open');
+      });
+      list.appendChild(item);
+    });
+  } catch(e) {
+    list.innerHTML = '<div class="ac-spinner">Error fetching locations</div>';
+  }
+}
+
+setupAutocomplete('place1', 'ac1', 1);
+setupAutocomplete('place2', 'ac2', 2);
+
+// ── Astronomy ──
+function dateToJD(year, month, day, hour, minute, utcOffset) {
+  const ut = hour + minute/60 - utcOffset;
+  let y = year, m = month, d = day + ut/24;
+  if (m <= 2) { y--; m += 12; }
+  const A = Math.floor(y/100), B = 2 - A + Math.floor(A/4);
+  return Math.floor(365.25*(y+4716)) + Math.floor(30.6001*(m+1)) + d + B - 1524.5;
+}
+
+function getMoonLongitude(jd) {
+  const T = (jd - 2451545.0) / 36525.0;
+  let L = 218.3164477 + 481267.88123421*T - 0.0015786*T*T + T*T*T/538841 - T*T*T*T/65194000;
+  const M  = (357.5291092 + 35999.0502909*T) * Math.PI/180;
+  const Mp = (134.9633964 + 477198.8675055*T + 0.0087414*T*T) * Math.PI/180;
+  const F  = (93.2720950  + 483202.0175233*T - 0.0036539*T*T) * Math.PI/180;
+  const D  = (297.8501921 + 445267.1114034*T - 0.1851675*T*T) * Math.PI/180;
+  L += 6.288774*Math.sin(Mp) + 1.274027*Math.sin(2*D-Mp) + 0.658314*Math.sin(2*D)
+     + 0.213618*Math.sin(2*Mp) - 0.185116*Math.sin(M) - 0.114332*Math.sin(2*F)
+     + 0.058793*Math.sin(2*D-2*Mp) + 0.057066*Math.sin(2*D-M-Mp)
+     + 0.053322*Math.sin(2*D+Mp) + 0.045758*Math.sin(2*D-M)
+     - 0.040923*Math.sin(M-Mp) - 0.034720*Math.sin(D) - 0.030383*Math.sin(M+Mp);
+  return ((L % 360) + 360) % 360;
+}
+
+function getNakshatra(moonLong) {
+  const AYANAMSA = 23.85;
+  const sid = ((moonLong - AYANAMSA) + 360) % 360;
+  const idx = Math.min(Math.floor(sid / 13.3333), 26);
+  const nk = NK[idx];
+  const posInNk = sid - idx * 13.3333;
+  const pada = Math.min(Math.floor(posInNk / 3.3333) + 1, 4);
+  return { ...nk, idx, pada };
+}
+
+function getUTCOffsetFromCoords(lon) {
+  return Math.round(lon / 15 * 2) / 2;
+}
+
+// ── Koota calculations ──
+function calcVarna(r1,r2) { return VARNA_ORDER[RASHI_VARNA[r1]] >= VARNA_ORDER[RASHI_VARNA[r2]] ? 1 : 0; }
+
+function calcVashya(r1,r2) {
+  const v1=RASHI_VASHYA[r1], v2=RASHI_VASHYA[r2];
+  if(v1===v2) return 2;
+  const compat={Manav:["Vanchar"],Chatushpad:["Manav"],Jalchar:["Chatushpad"],Vanchar:["Jalchar"],Keeta:["Jalchar"]};
+  if(compat[v1]?.includes(v2)) return 1;
+  if(compat[v2]?.includes(v1)) return 0.5;
+  return 0;
+}
+
+function calcTara(i1,i2) {
+  let t = ((i2-i1+27)%27)+1;
+  if(t>9) t-=9; if(t>9) t-=9;
+  return [1,3,5,7].includes(t) ? 3 : 0;
+}
+
+function calcYoni(y1,y2) {
+  if(y1===y2) return 4;
+  if(YONI_ENEMY[y1]===y2||YONI_ENEMY[y2]===y1) return 0;
+  return 2;
+}
+
+function calcGrahaMaitri(r1,r2) {
+  const l1=RASHI_LORD[r1], l2=RASHI_LORD[r2];
+  if(l1===l2) return 5;
+  const rel = (lord, other) => PF[lord]?.f.includes(other) ? 'f' : PF[lord]?.e.includes(other) ? 'e' : 'n';
+  const r12=rel(l1,l2), r21=rel(l2,l1);
+  if(r12==='f'&&r21==='f') return 5;
+  if((r12==='f'&&r21==='n')||(r12==='n'&&r21==='f')) return 4;
+  if(r12==='n'&&r21==='n') return 3;
+  if((r12==='f'&&r21==='e')||(r12==='e'&&r21==='f')) return 1;
+  if((r12==='n'&&r21==='e')||(r12==='e'&&r21==='n')) return 0.5;
+  return 0;
+}
+
+function calcGana(g1,g2) {
+  if(g1===g2) return 6;
+  if((g1==='Deva'&&g2==='Manav')||(g1==='Manav'&&g2==='Deva')) return 5;
+  if((g1==='Deva'&&g2==='Rakshasa')||(g1==='Rakshasa'&&g2==='Deva')) return 1;
+  return 0;
+}
+
+function calcBhakoot(r1,r2) {
+  const n1=RASHIS.indexOf(r1)+1, n2=RASHIS.indexOf(r2)+1;
+  const d12=((n2-n1+12)%12)+1, d21=((n1-n2+12)%12)+1;
+  if([2,6,5,9,12,8].includes(d12)||[2,6,5,9,12,8].includes(d21)) return 0;
+  return 7;
+}
+
+function calcNadi(n1,n2) { return n1===n2 ? 0 : 8; }
+
+// ── Main calculate ──
+async function calculate() {
+  const name1=document.getElementById('name1').value.trim()||'Person 1';
+  const name2=document.getElementById('name2').value.trim()||'Person 2';
+  const dob1=document.getElementById('dob1').value;
+  const tob1=document.getElementById('tob1').value;
+  const dob2=document.getElementById('dob2').value;
+  const tob2=document.getElementById('tob2').value;
+
+  const err = document.getElementById('errMsg');
+  err.classList.remove('show');
+
+  if(!dob1||!tob1||!dob2||!tob2) { showErr("Please fill date and time of birth for both persons."); return; }
+  if(!geoData[1]) { showErr("Please select a location from the dropdown for Person 1."); return; }
+  if(!geoData[2]) { showErr("Please select a location from the dropdown for Person 2."); return; }
+
+  const btn = document.getElementById('calcBtn');
+  btn.disabled = true;
+  document.getElementById('btnText').innerHTML = '<span class="spinner"></span> Calculating…';
+  document.getElementById('results').style.display = 'none';
+
+  try {
+    const utc1 = getUTCOffsetFromCoords(geoData[1].lon);
+    const utc2 = getUTCOffsetFromCoords(geoData[2].lon);
+
+    const [y1,m1,d1]=dob1.split('-').map(Number), [h1,min1]=tob1.split(':').map(Number);
+    const [y2,m2,d2]=dob2.split('-').map(Number), [h2,min2]=tob2.split(':').map(Number);
+
+    const jd1 = dateToJD(y1,m1,d1,h1,min1,utc1);
+    const jd2 = dateToJD(y2,m2,d2,h2,min2,utc2);
+
+    const moon1 = getMoonLongitude(jd1);
+    const moon2 = getMoonLongitude(jd2);
+
+    const nk1 = getNakshatra(moon1);
+    const nk2 = getNakshatra(moon2);
+
+    // Show nakshatra badges
+    showNkBadge(1, nk1);
+    showNkBadge(2, nk2);
+
+    // Scores
+    const varna      = calcVarna(nk1.rashi, nk2.rashi);
+    const vashya     = calcVashya(nk1.rashi, nk2.rashi);
+    const tara       = calcTara(nk1.idx, nk2.idx);
+    const yoni       = calcYoni(nk1.yoni, nk2.yoni);
+    const grahaMaitri= calcGrahaMaitri(nk1.rashi, nk2.rashi);
+    const gana       = calcGana(nk1.gana, nk2.gana);
+    const bhakoot    = calcBhakoot(nk1.rashi, nk2.rashi);
+    const nadi       = calcNadi(nk1.nadi, nk2.nadi);
+
+    const rawTotal = varna+vashya+tara+yoni+grahaMaitri+gana+bhakoot+nadi;
+    const total = Math.round(rawTotal * 10) / 10;
+
+    let verdict, desc;
+    if(total >= 32)      { verdict="Excellent match";   desc="Highly auspicious — considered ideal for marriage."; }
+    else if(total >= 24) { verdict="Good match";        desc="Recommended for marriage with positive prospects."; }
+    else if(total >= 18) { verdict="Average match";     desc="Acceptable union — some remedies may be advised."; }
+    else                 { verdict="Below threshold";   desc="Generally not recommended — consult a Jyotishi."; }
+
+    document.getElementById('res-name1').textContent = name1;
+    document.getElementById('res-name2').textContent = name2;
+    document.getElementById('scoreNum').textContent  = total;
+    document.getElementById('scoreVerdict').textContent = verdict;
+    document.getElementById('scoreDesc').textContent = desc;
+
+    setTimeout(() => {
+      document.getElementById('progressBar').style.width = (total/36*100).toFixed(1)+'%';
+    }, 200);
+
+    // Koota cells
+    const kootas = [
+      {name:"Varna",   max:1,  score:varna,       desc:"Spiritual"},
+      {name:"Vashya",  max:2,  score:vashya,      desc:"Attraction"},
+      {name:"Tara",    max:3,  score:tara,        desc:"Longevity"},
+      {name:"Yoni",    max:4,  score:yoni,        desc:"Physical"},
+      {name:"Graha Maitri",max:5,score:grahaMaitri,desc:"Mental"},
+      {name:"Gana",    max:6,  score:gana,        desc:"Temperament"},
+      {name:"Bhakoot", max:7,  score:bhakoot,     desc:"Emotional"},
+      {name:"Nadi",    max:8,  score:nadi,        desc:"Progeny"}
+    ];
+
+    document.getElementById('kootaGrid').innerHTML = kootas.map(k => {
+      const pct = k.score/k.max;
+      const tier = pct >= 0.67 ? 'good' : pct >= 0.34 ? 'mid' : 'bad';
+      return `<div class="koota-cell ${tier}">
+        <div class="koota-score-val ${tier}">${k.score}<span class="koota-max">/${k.max}</span></div>
+        <div class="koota-cell-name">${k.name}</div>
+        <div class="koota-cell-desc">${k.desc}</div>
+      </div>`;
+    }).join('');
+
+    // Doshas
+    const doshas = [];
+    if(nadi   === 0)  doshas.push({title:"Nadi Dosha", body:"Both share the same Nadi. This is considered the most serious dosha, affecting the health of offspring. Remedies like Nadi Nivar Puja are advised."});
+    if(bhakoot=== 0)  doshas.push({title:"Bhakoot Dosha", body:"Unfavorable Rashi positions (6-8 or 2-12 pattern). Can affect health and finances. Remedies may cancel this if other scores are strong."});
+    if(gana <= 1)     doshas.push({title:"Gana Mismatch", body:"Significant temperament differences (Deva–Rakshasa). Can lead to personality conflicts. Evaluate other factors carefully."});
+
+    const ds = document.getElementById('doshaSection');
+    if(doshas.length) {
+      ds.innerHTML = doshas.map(d => `<div class="dosha-item"><div class="dosha-icon">⚠</div><div class="dosha-text"><strong>${d.title}</strong>${d.body}</div></div>`).join('');
+    } else {
+      ds.innerHTML = `<div class="all-good"><span>✓</span><span>No major doshas detected.</span></div>`;
+    }
+
+    document.getElementById('results').style.display = 'block';
+    document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  } catch(e) {
+    showErr("Calculation error: " + e.message);
+  } finally {
+    btn.disabled = false;
+    document.getElementById('btnText').innerHTML = '✦ Calculate compatibility';
+  }
+}
+
+function showNkBadge(num, nk) {
+  const badge = document.getElementById('nkbadge'+num);
+  document.getElementById('nkname'+num).textContent = nk.name + ' · Pada ' + nk.pada;
+  document.getElementById('nkmeta'+num).textContent = nk.rashi + ' · ' + nk.gana + ' gana · ' + nk.nadi + ' nadi · ' + nk.yoni + ' yoni';
+  badge.classList.add('visible');
+}
+
+function showErr(msg) {
+  const el = document.getElementById('errMsg');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+
+function resetForm() {
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('nkbadge1').classList.remove('visible');
+  document.getElementById('nkbadge2').classList.remove('visible');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
