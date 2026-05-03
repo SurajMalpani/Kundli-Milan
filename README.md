@@ -1,9 +1,19 @@
 Kundali Milan (also called Ashtakoot Milan), the traditional Vedic astrology system of matchmaking. It matches 8 categories (kootas) totaling 36 points (gunas). Here's a breakdown:
 
-The 8 Kootas (Categories)
-#KootaMax PointsWhat It Measures1Varna1Spiritual compatibility & ego levels2Vashya2Mutual attraction & control/dominance3Tara3Health, longevity & well-being after marriage4Yoni4Physical/sexual compatibility & intimacy5Graha Maitri5Mental compatibility, friendship, intellectual bond6Gana6Temperament & nature (Dev, Manav, Rakshasa)7Bhakoot7Emotional & financial compatibility, love8Nadi8Health of offspring & genetic compatibilityTotal36—
+**The 8 Kootas (Categories)**
+#KootaMax PointsWhat It Measures
+1.Varna: Spiritual compatibility & ego levels - 1 point
+2.Vashya: Mutual attraction & control/dominance - 2 points
+3.Tara: Health, longevity & well-being after marriage - 3 points
+4.Yoni: Physical/sexual compatibility & intimacy - 4 points
+5.Graha: Maitri5Mental compatibility, friendship, intellectual bond - 5 points
+6.Gana: Temperament & nature (Dev, Manav, Rakshasa) - 6 points
+7.Bhakoot: Emotional & financial compatibility, love - 7 points
+8.Nadi: Health of offspring & genetic compatibility - 8 points
 
-How Scoring Works
+Total = 36
+
+**How Scoring Works**
 The matching is based on the Moon sign (Rashi) and Nakshatra (birth star) of both individuals.
 
 18+ points → Generally acceptable for marriage
@@ -12,7 +22,7 @@ The matching is based on the Moon sign (Rashi) and Nakshatra (birth star) of bot
 Below 18 → Usually not recommended
 
 
-Quick Summary of Each Koota
+**Quick Summary of Each Koota**
 1. Varna (1 pt) — Divides people into 4 castes spiritually (Brahmin, Kshatriya, Vaishya, Shudra) based on Rashi. The groom's varna should be equal to or higher than the bride's.
 2. Vashya (2 pts) — Classifies Rashis into 5 groups (Manav, Vanchar, Chatushpad, Jalchar, Keeta). Checks who has natural influence over whom.
 3. Tara (3 pts) — Counts the Nakshatra distance between bride and groom (9 Taras). Odd-numbered Taras are favorable.
@@ -22,7 +32,7 @@ Quick Summary of Each Koota
 7. Bhakoot (7 pts) — Rashi position relative to each other (2-12, 5-9, 6-8 patterns are considered inauspicious). Full 7 pts for compatible positions.
 8. Nadi (8 pts) — Three Nadis: Aadi, Madhya, Antya. Same Nadi = 0 points (considered a serious dosha), different Nadi = full 8 points.
 
-Important Notes
+**Important Notes**
 
 Nadi Dosha (both same Nadi) and Bhakoot Dosha are considered serious and sometimes require remedies even if the total score is good.
 A high score doesn't guarantee happiness — astrologers also check Mangal Dosha, the 7th house, and overall chart compatibility (Lagna matching).
