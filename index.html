@@ -522,7 +522,10 @@
       <div class="dosha-section" id="doshaSection"></div>
     </div>
 
-    <div style="text-align:center; margin-top: -0.5rem; margin-bottom: 1.5rem;">
+    <div style="text-align:center; margin-top: -0.5rem; margin-bottom: 1.5rem; display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+      <button class="calc-btn" id="dlBtn" onclick="downloadMilan()" style="font-size: 0.78rem; padding: 11px 2rem;">
+        <span>↓</span> <span id="dlTxt">Download report (PDF)</span>
+      </button>
       <button class="calc-btn" onclick="resetForm()" style="background: linear-gradient(135deg, #8A7A6E, #4A3F35); font-size: 0.78rem; padding: 11px 2rem;">
         ← Calculate again
       </button>
@@ -531,7 +534,7 @@
 
   <footer>
     <p>Calculations use Jean Meeus's astronomical formula with Lahiri ayanamsa correction.</p>
-    <p style="margin-top:4px">For reference only · Consult a qualified Jyotishi for important decisions.</p>
+    <p style="margin-top:4px">For spiritual and directional guidance only · Consult a Jyotishi for important decision making.</p>
   </footer>
 
 </div>
@@ -842,6 +845,14 @@ async function calculate() {
       ds.innerHTML = `<div class="all-good"><span>✓</span><span>No major doshas detected.</span></div>`;
     }
 
+    lastMatch = {
+      p: [
+        { name: name1, dob: dob1, tob: tob1, place: geoData[1].name, lat: geoData[1].lat, lon: geoData[1].lon, utc: utc1, nk: nk1 },
+        { name: name2, dob: dob2, tob: tob2, place: geoData[2].name, lat: geoData[2].lat, lon: geoData[2].lon, utc: utc2, nk: nk2 },
+      ],
+      kootas, total, verdict, desc, doshas,
+    };
+
     document.getElementById('results').style.display = 'block';
     document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
@@ -851,6 +862,307 @@ async function calculate() {
     btn.disabled = false;
     document.getElementById('btnText').innerHTML = '✦ Calculate compatibility';
   }
+}
+
+// ══════════════════════════════════════════════
+//  PDF REPORT
+// ══════════════════════════════════════════════
+let lastMatch = null;
+
+let jsPDFPromise = null;
+function loadJsPDF() {
+  if (window.jspdf) return Promise.resolve(window.jspdf.jsPDF);
+  if (!jsPDFPromise) jsPDFPromise = new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    s.onload = () => res(window.jspdf.jsPDF);
+    s.onerror = () => { jsPDFPromise = null; rej(new Error('jsPDF failed to load')); };
+    document.head.appendChild(s);
+  });
+  return jsPDFPromise;
+}
+
+async function downloadMilan() {
+  if (!lastMatch) return;
+  const btn = document.getElementById('dlBtn'), txt = document.getElementById('dlTxt');
+  const label = txt.innerHTML;
+  btn.disabled = true; txt.innerHTML = '<span class="spinner"></span> Preparing PDF…';
+  try {
+    if (document.fonts) await document.fonts.ready;
+    buildMilanPDF(await loadJsPDF());
+  } catch (e) {
+    console.error(e);
+    showErr('Could not create the PDF. Please check your connection and try again.');
+  } finally {
+    btn.disabled = false; txt.innerHTML = label;
+  }
+}
+
+const KOOTA_INFO = {
+  'Varna':        ['Spiritual compatibility and ego', n => RASHI_VARNA[n.rashi]],
+  'Vashya':       ['Mutual attraction and influence', n => RASHI_VASHYA[n.rashi]],
+  'Tara':         ['Birth-star harmony, health, longevity', n => n.name],
+  'Yoni':         ['Physical compatibility and intimacy', n => n.yoni],
+  'Graha Maitri': ['Friendship of Moon-sign lords', n => RASHI_LORD[n.rashi]],
+  'Gana':         ['Temperament: Deva, Manav, Rakshasa', n => n.gana],
+  'Bhakoot':      ['Moon-sign placement, emotional bond', n => n.rashi],
+  'Nadi':         ['Health and progeny', n => n.nadi],
+};
+
+function buildMilanPDF(jsPDF) {
+  const R = lastMatch;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
+  const W = 210, H = 297, M = 18;
+  const INK = [40, 30, 18], DIM = [120, 100, 70], GOLD = [160, 120, 40], FAINT = [175, 160, 130];
+  const TEAL = [45, 107, 94], RUST = [176, 90, 47], LINE = [222, 205, 165], PAPER = [251, 246, 234], BAND = [243, 233, 210];
+  const SITE = 'https://surajmalpani.github.io/Kundli-Milan/';
+  const col = c => doc.setTextColor(...c);
+  const font = (f, st, sz) => { doc.setFont(f, st); doc.setFontSize(sz); };
+  // Base PDF fonts only cover Latin-1: fold accents; anything else (e.g. names typed in Hindi) is drawn as an image.
+  const fold = s => [...String(s ?? '').normalize('NFC')]
+    .map(ch => ch <= '\xFF' ? ch : ch.normalize('NFD').replace(/[̀-ͯ]/g, '')).join('')
+    .replace(/[–—]/g, '-').replace(/[·]/g, '\xB7');
+  const t = s => fold(s).replace(/[^\x00-\xFF]/g, '');
+  const needsImg = s => /[^\x00-\xFF]/.test(fold(s));
+  // Text that may contain non-Latin script: rendered by the browser to a canvas.
+  const uni = (text, x, y, pt, rgb, align = 'left', weight = 600) => {
+    text = fold(text);
+    if (!needsImg(text)) {
+      font('times', weight >= 600 ? 'bold' : 'normal', pt); col(rgb);
+      doc.text(text, x, y, { align }); return doc.getTextWidth(text);
+    }
+    const PX = 8, MMp = 25.4 / 72 / PX, fpx = pt * PX;
+    const f = `${weight} ${fpx}px 'Cormorant Garamond', 'Noto Sans Devanagari', 'Nirmala UI', serif`;
+    const cv = document.createElement('canvas'); let ctx = cv.getContext('2d'); ctx.font = f;
+    const pad = Math.ceil(fpx * 0.1);
+    cv.width = Math.ceil(ctx.measureText(text).width) + 2 * pad; cv.height = Math.ceil(fpx * 1.6);
+    ctx = cv.getContext('2d'); ctx.font = f; ctx.fillStyle = `rgb(${rgb.join(',')})`; ctx.fillText(text, pad, fpx * 1.15);
+    const w = cv.width * MMp, tw = w - 2 * pad * MMp;
+    const left = align === 'right' ? x - tw : align === 'center' ? x - tw / 2 : x;
+    doc.addImage(cv.toDataURL('image/png'), 'PNG', left - pad * MMp, y - fpx * 1.15 * MMp, w, cv.height * MMp);
+    return tw;
+  };
+  const tier = (s, m) => s / m >= 0.67 ? TEAL : s / m >= 0.34 ? GOLD : RUST;
+  const fmtD = iso => {
+    const [y, m, d] = iso.split('-').map(Number);
+    return `${String(d).padStart(2, '0')} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m - 1]} ${y}`;
+  };
+  const ns = (v, a, b) => `${Math.abs(v).toFixed(4)}\xB0 ${v >= 0 ? a : b}`;
+  const utcStr = u => { const h = Math.trunc(u), mm = Math.round(Math.abs(u - h) * 60);
+    return `UTC${u < 0 ? '-' : '+'}${Math.abs(h)}${mm ? ':' + String(mm).padStart(2, '0') : ''}`; };
+  let page = 0;
+
+  const newPage = () => {
+    if (page++) doc.addPage();
+    doc.setFillColor(...PAPER); doc.rect(0, 0, W, H, 'F');
+    doc.setDrawColor(...GOLD); doc.setLineWidth(0.5); doc.rect(8, 8, W - 16, H - 16);
+    doc.setLineWidth(0.15); doc.rect(9.5, 9.5, W - 19, H - 19);
+  };
+  const footer = () => {
+    font('times', 'italic', 8); col(FAINT);
+    doc.text(t(`${t(R.p[0].name)} & ${t(R.p[1].name)} \xB7 Kundali Milan \xB7 Ashtakoot (36 gunas)`), W / 2, H - 19.5, { align: 'center' });
+    doc.text(`${page}`, W - M, H - 19.5, { align: 'right' });
+    font('times', 'italic', 8.5); col(DIM);
+    doc.text('For spiritual and directional guidance only \xB7 Consult a Jyotishi for important decision making.', W / 2, H - 15.6, { align: 'center' });
+    const pre = 'This report was generated by Kundali Milan  \xB7  Create yours at';
+    const url = 'surajmalpani.github.io/Kundli-Milan';
+    font('helvetica', 'normal', 7); const pw = doc.getTextWidth(pre) + 1.4;
+    font('helvetica', 'bold', 7); const uw = doc.getTextWidth(url);
+    const lx = W / 2 - (pw + uw) / 2, ly = H - 11.8;
+    font('helvetica', 'normal', 7); col(DIM); doc.text(pre, lx, ly);
+    font('helvetica', 'bold', 7); col(GOLD); doc.text(url, lx + pw, ly);
+    doc.setDrawColor(...GOLD); doc.setLineWidth(0.15); doc.line(lx + pw, ly + 0.6, lx + pw + uw, ly + 0.6);
+    doc.link(lx, ly - 2.6, pw + uw, 3.6, { url: SITE });
+  };
+  const section = (title, sub, y) => {
+    font('times', 'bold', 13); col(INK); doc.text(title, M, y);
+    const tw = doc.getTextWidth(title);
+    if (sub) { font('times', 'italic', 10); col(GOLD); doc.text(sub, M + tw + 2.5, y); }
+    doc.setDrawColor(...LINE); doc.setLineWidth(0.3); doc.line(M, y + 2.6, W - M, y + 2.6);
+    return y + 9;
+  };
+
+  // ── PAGE 1: score + birth details ──
+  newPage();
+  font('helvetica', 'normal', 7.5); col(GOLD);
+  doc.text('KUNDALI MILAN  \xB7  ASHTAKOOT COMPATIBILITY REPORT', W / 2, 21, { align: 'center', charSpace: 0.6 });
+  // Couple names, centred as one line: name1 & name2
+  const n1 = R.p[0].name, n2 = R.p[1].name, NZ = 22;
+  const wOf = s => { if (needsImg(s)) return null; font('times', 'bold', NZ); return doc.getTextWidth(t(s)); };
+  font('times', 'italic', NZ); const ampW = doc.getTextWidth(' & ');
+  let w1 = wOf(n1), w2 = wOf(n2);
+  if (w1 !== null && w2 !== null) {
+    let x = W / 2 - (w1 + ampW + w2) / 2;
+    font('times', 'bold', NZ); col(INK); doc.text(t(n1), x, 35); x += w1;
+    font('times', 'italic', NZ); col(GOLD); doc.text(' & ', x, 35); x += ampW;
+    font('times', 'bold', NZ); col(INK); doc.text(t(n2), x, 35);
+  } else {
+    uni(n1, W / 2 - ampW / 2, 35, NZ, INK, 'right');
+    font('times', 'italic', NZ); col(GOLD); doc.text(' & ', W / 2, 35, { align: 'center' });
+    uni(n2, W / 2 + ampW / 2, 35, NZ, INK, 'left');
+  }
+
+  // Score ring
+  const cx = W / 2, cy = 64, r = 20, pct = R.total / 36;
+  doc.setFillColor(...BAND); doc.circle(cx, cy, r, 'F');
+  doc.setDrawColor(...LINE); doc.setLineWidth(2.2); doc.circle(cx, cy, r - 1.2, 'S');
+  // progress arc as short segments
+  const ac = tier(R.total, 36); doc.setDrawColor(...ac); doc.setLineWidth(2.2);
+  const steps = Math.max(1, Math.round(120 * pct));
+  for (let i = 0; i < steps; i++) {
+    const a0 = -Math.PI / 2 + (i / 120) * 2 * Math.PI, a1 = -Math.PI / 2 + ((i + 1) / 120) * 2 * Math.PI;
+    doc.line(cx + (r - 1.2) * Math.cos(a0), cy + (r - 1.2) * Math.sin(a0), cx + (r - 1.2) * Math.cos(a1), cy + (r - 1.2) * Math.sin(a1));
+  }
+  font('times', 'normal', 30); col(INK); doc.text(String(R.total), cx, cy + 3, { align: 'center' });
+  font('helvetica', 'normal', 7); col(DIM); doc.text('OUT OF 36', cx, cy + 9, { align: 'center', charSpace: 0.4 });
+
+  font('times', 'bold', 17); col(ac); doc.text(t(R.verdict), W / 2, cy + r + 11, { align: 'center' });
+  font('times', 'italic', 10.5); col(DIM); doc.text(t(R.desc), W / 2, cy + r + 17, { align: 'center' });
+  // bar
+  const bx = M + 30, bw = W - 2 * M - 60, by = cy + r + 22;
+  doc.setFillColor(...BAND); doc.roundedRect(bx, by, bw, 2.2, 1.1, 1.1, 'F');
+  doc.setFillColor(...ac); doc.roundedRect(bx, by, Math.max(2.2, bw * pct), 2.2, 1.1, 1.1, 'F');
+
+  // Ashtakoot mini grid
+  let y = by + 13;
+  const gw = (W - 2 * M) / 4;
+  R.kootas.forEach((k, i) => {
+    const x = M + (i % 4) * gw, yy = y + Math.floor(i / 4) * 19;
+    doc.setFillColor(...BAND); doc.rect(x + 0.8, yy, gw - 1.6, 16, 'F');
+    doc.setFillColor(...tier(k.score, k.max)); doc.rect(x + 0.8, yy + 15.2, gw - 1.6, 0.8, 'F');
+    font('times', 'bold', 15); col(tier(k.score, k.max)); const sw = doc.getTextWidth(String(k.score));
+    doc.text(String(k.score), x + gw / 2 - 2, yy + 7, { align: 'center' });
+    font('helvetica', 'normal', 7); col(DIM); doc.text(`/${k.max}`, x + gw / 2 - 2 + sw / 2 + 0.5, yy + 7);
+    font('helvetica', 'bold', 7.2); col(INK); doc.text(k.name.toUpperCase(), x + gw / 2, yy + 11, { align: 'center', charSpace: 0.2 });
+    font('times', 'italic', 8); col(DIM); doc.text(k.desc, x + gw / 2, yy + 14, { align: 'center' });
+  });
+  y += 46;
+
+  // Birth details, two columns
+  y = section('Birth Details', 'Janma vivaran', y);
+  const colW = (W - 2 * M - 12) / 2;
+  R.p.forEach((p, i) => {
+    const x = M + i * (colW + 12);
+    doc.setFillColor(...(i ? TEAL : GOLD)); doc.circle(x + 1.3, y - 1.2, 1.3, 'F');
+    uni(p.name, x + 4.5, y, 12, INK, 'left', 600);
+    let yy = y + 7;
+    const rows = [
+      ['Date of birth', fmtD(p.dob)], ['Time of birth', p.tob + ' (local)'], ['Place', p.place],
+      ['Coordinates', `${ns(p.lat, 'N', 'S')}, ${ns(p.lon, 'E', 'W')}`], ['Time zone', utcStr(p.utc)],
+      ['Moon sign \xB7 Rashi', p.nk.rashi], ['Nakshatra', `${p.nk.name} \xB7 Pada ${p.nk.pada}`],
+      ['Nakshatra lord', p.nk.lord], ['Rashi lord', RASHI_LORD[p.nk.rashi]], ['Varna', RASHI_VARNA[p.nk.rashi]],
+      ['Vashya', RASHI_VASHYA[p.nk.rashi]], ['Gana', p.nk.gana], ['Yoni', p.nk.yoni], ['Nadi', p.nk.nadi],
+    ];
+    rows.forEach(([k, v]) => {
+      font('helvetica', 'normal', 6.8); col(DIM); doc.text(k.toUpperCase(), x, yy);
+      const kw = doc.getTextWidth(k.toUpperCase());
+      if (needsImg(v)) { uni(v, x + colW, yy, 9.5, INK, 'right', 600); }
+      else {
+        font('times', 'bold', 9.5); col(INK);
+        let s = t(v);
+        while (s.length > 1 && doc.getTextWidth(s) > colW - kw - 4) s = s.slice(0, -2) + '.';
+        doc.text(s, x + colW, yy, { align: 'right' });
+      }
+      doc.setDrawColor(...LINE); doc.setLineWidth(0.15); doc.line(x, yy + 2, x + colW, yy + 2);
+      yy += 6.4;
+    });
+  });
+  footer();
+
+  // ── PAGE 2: breakdown, doshas, guide ──
+  newPage();
+  y = section('Ashtakoot Breakdown', 'the eight kootas', 24);
+  const cols = [
+    { h: 'Koota', w: 27, bold: true }, { h: 'Signifies', w: 55, italic: true, color: DIM, size: 9 },
+    { h: t(R.p[0].name), w: 33 }, { h: t(R.p[1].name), w: 33 },
+    { h: 'Score', w: 15, align: 'right', bold: true }, { h: 'Max', w: 11, align: 'right', color: DIM },
+  ];
+  const rh = 8.2;
+  const drawRow = (cells, yy, opts = {}) => {
+    let x = M;
+    cells.forEach((c, ci) => {
+      const cd = cols[ci];
+      font('times', (cd.bold || opts.bold) ? 'bold' : cd.italic ? 'italic' : 'normal', cd.size || 9.8);
+      col(opts.colors?.[ci] || cd.color || INK);
+      let s = t(c);
+      while (s.length > 1 && doc.getTextWidth(s) > cd.w - 3) s = s.slice(0, -2) + '.';
+      doc.text(s, cd.align === 'right' ? x + cd.w - 2 : x + 2, yy + rh * 0.62, { align: cd.align || 'left' });
+      x += cd.w;
+    });
+  };
+  doc.setFillColor(...BAND); doc.rect(M, y, W - 2 * M, 6.6, 'F');
+  font('helvetica', 'bold', 7); col(DIM);
+  let hx = M;
+  cols.forEach(c => {
+    let s = c.h.toUpperCase(); while (s.length > 1 && doc.getTextWidth(s) > c.w - 3) s = s.slice(0, -2) + '.';
+    doc.text(s, c.align === 'right' ? hx + c.w - 2 : hx + 2, y + 4.4, { align: c.align || 'left' }); hx += c.w;
+  });
+  y += 6.6;
+  R.kootas.forEach(k => {
+    const [sig, attr] = KOOTA_INFO[k.name];
+    const tc = tier(k.score, k.max);
+    drawRow([k.name, sig, attr(R.p[0].nk), attr(R.p[1].nk), String(k.score), String(k.max)], y, { colors: { 4: tc } });
+    // score bar under the score column
+    doc.setFillColor(...BAND); doc.rect(W - M - 26, y + rh - 1.6, 24, 0.8, 'F');
+    doc.setFillColor(...tc); doc.rect(W - M - 26, y + rh - 1.6, 24 * k.score / k.max, 0.8, 'F');
+    doc.setDrawColor(...LINE); doc.setLineWidth(0.15); doc.line(M, y + rh, W - M, y + rh);
+    y += rh;
+  });
+  doc.setFillColor(248, 232, 190); doc.rect(M, y, W - 2 * M, rh, 'F');
+  drawRow(['Total', 'Guna Milan score', '', '', String(R.total), '36'], y, { bold: true, colors: { 4: tier(R.total, 36) } });
+  y += rh + 4;
+  font('times', 'italic', 7.8); col(FAINT);
+  doc.text('Person columns show the attribute each koota compares (from Moon sign and birth nakshatra).', M, y);
+  y += 11;
+
+  y = section('Dosha Analysis', 'afflictions to review', y);
+  if (R.doshas.length) {
+    R.doshas.forEach(d => {
+      const lines = doc.splitTextToSize(t(d.body), W - 2 * M - 12);
+      const bh = 8 + lines.length * 4.3;
+      doc.setFillColor(250, 236, 226); doc.rect(M, y - 4, W - 2 * M, bh, 'F');
+      doc.setFillColor(...RUST); doc.rect(M, y - 4, 0.9, bh, 'F');
+      font('times', 'bold', 10.5); col(RUST); doc.text(t(d.title), M + 5, y + 0.5);
+      font('times', 'normal', 9.5); col(INK); doc.text(lines, M + 5, y + 5.2);
+      y += bh + 3;
+    });
+  } else {
+    doc.setFillColor(228, 240, 236); doc.rect(M, y - 4, W - 2 * M, 9, 'F');
+    font('times', 'bold', 10.5); col(TEAL); doc.text('No major doshas detected (Nadi, Bhakoot, Gana).', M + 5, y + 1.6);
+    y += 9;
+  }
+  y += 7;
+
+  y = section('Score Guide', 'interpreting the gunas', y);
+  [['32 - 36', 'Excellent match', 'Highly auspicious, considered ideal for marriage.', TEAL],
+   ['24 - 31', 'Good match', 'Recommended for marriage with positive prospects.', TEAL],
+   ['18 - 23', 'Average match', 'Acceptable union; some remedies may be advised.', GOLD],
+   ['0 - 17', 'Below threshold', 'Generally not recommended; consult a Jyotishi.', RUST]].forEach(([rg, v, d, c]) => {
+    const cur = v === R.verdict;
+    if (cur) { doc.setFillColor(248, 232, 190); doc.rect(M, y - 4.4, W - 2 * M, 6.6, 'F'); }
+    font('helvetica', 'bold', 8.5); col(c); doc.text(rg, M + 2, y);
+    font('times', 'bold', 10); col(INK); doc.text(v + (cur ? '  (this match)' : ''), M + 24, y);
+    font('times', 'italic', 9.5); col(DIM); doc.text(d, M + 80, y);
+    doc.setDrawColor(...LINE); doc.setLineWidth(0.15); doc.line(M, y + 2.2, W - M, y + 2.2);
+    y += 6.6;
+  });
+  y += 8;
+
+  doc.setFillColor(...BAND); doc.rect(M, y, W - 2 * M, 17, 'F');
+  font('times', 'italic', 9); col(DIM);
+  doc.text(doc.splitTextToSize(
+    'Moon positions are computed in the browser with Jean Meeus\'s lunar formula and a Lahiri ayanamsa correction. ' +
+    'Ashtakoot Milan considers only the Moon sign and nakshatra; a full assessment also weighs Manglik dosha and the complete charts. ' +
+    'This report is for reference only; consult a qualified Jyotishi before making important decisions.', W - 2 * M - 8), M + 4, y + 5.5);
+  const now = new Date();
+  font('helvetica', 'normal', 7); col(FAINT);
+  doc.text(`Generated ${fmtD(now.toISOString().slice(0, 10))}`, W / 2, y + 23, { align: 'center' });
+  footer();
+
+  const safe = s => s.replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-');
+  const a = safe(n1), b = safe(n2);
+  doc.setProperties({ title: `Kundali Milan - ${n1} & ${n2}`, subject: 'Ashtakoot compatibility report' });
+  doc.save(`Kundali-Milan-${a && b ? a + '-' + b : 'report'}.pdf`);
 }
 
 function showNkBadge(num, nk) {
@@ -868,6 +1180,7 @@ function showErr(msg) {
 
 function resetForm() {
   document.getElementById('results').style.display = 'none';
+  lastMatch = null;
   document.getElementById('nkbadge1').classList.remove('visible');
   document.getElementById('nkbadge2').classList.remove('visible');
   document.getElementById('errMsg').classList.remove('show');
