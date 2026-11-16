@@ -94,6 +94,13 @@
   }
   h1 em { font-style: italic; color: var(--gold); }
 
+  .header-tagline {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 1.2rem;
+    color: var(--ink-soft);
+    margin: 0.2rem 0 0.5rem;
+  }
   .header-sub {
     font-size: 0.875rem;
     color: var(--ink-muted);
@@ -370,6 +377,19 @@
     color: var(--teal);
   }
 
+  /* ── Jyotishi's notes ── */
+  .notes-moons { text-align: center; font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1.05rem; color: var(--ink-soft); margin-bottom: 1.2rem; }
+  .notes-moons strong { display: block; font-style: normal; font-weight: 500; font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); margin-bottom: 2px; }
+  .notes-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+  @media (max-width: 560px) { .notes-cols { grid-template-columns: 1fr; } }
+  .notes-col { border-left: 2px solid var(--teal); padding-left: 0.9rem; }
+  .notes-col.care { border-left-color: var(--rust); }
+  .notes-h { font-size: 0.72rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.6rem; color: var(--teal); }
+  .notes-col.care .notes-h { color: var(--rust); }
+  .note-item { font-size: 0.85rem; color: var(--ink-soft); line-height: 1.55; margin-bottom: 0.7rem; }
+  .note-item b { font-weight: 500; color: var(--ink); }
+  .notes-foot { margin-top: 0.6rem; font-size: 0.72rem; color: var(--ink-muted); text-align: center; }
+
   /* ── Footer ── */
   footer {
     text-align: center;
@@ -415,6 +435,7 @@
       <div class="ornament-line right"></div>
     </div>
     <h1>Kundali <em>Milan</em></h1>
+    <p class="header-tagline">How compatible are you two, as per astrology?</p>
     <p class="header-sub">Vedic Ashtakoot Compatibility · 36 Points</p>
   </header>
 
@@ -520,6 +541,14 @@
       <div class="koota-grid" id="kootaGrid"></div>
 
       <div class="dosha-section" id="doshaSection"></div>
+
+      <div class="kootas-title" style="margin-top:2rem">Jyotishi's notes</div>
+      <div class="notes-moons" id="notesMoons"></div>
+      <div class="notes-cols">
+        <div class="notes-col good"><div class="notes-h">Where you flow together</div><div id="notesGood"></div></div>
+        <div class="notes-col care"><div class="notes-h">Where you may need care</div><div id="notesCare"></div></div>
+      </div>
+      <div class="notes-foot">Traditional, general indications from the Moon signs and nakshatras. A full reading weighs both complete charts.</div>
     </div>
 
     <div style="text-align:center; margin-top: -0.5rem; margin-bottom: 1.5rem; display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
@@ -579,6 +608,51 @@ const RASHI_LORD = {Aries:"Mars",Taurus:"Venus",Gemini:"Mercury",Cancer:"Moon",L
 const PF = {Sun:{f:["Moon","Mars","Jupiter"],n:["Mercury"],e:["Venus","Saturn"]},Moon:{f:["Sun","Mercury"],n:["Mars","Jupiter","Venus","Saturn"],e:[]},Mars:{f:["Sun","Moon","Jupiter"],n:["Venus","Saturn"],e:["Mercury"]},Mercury:{f:["Sun","Venus"],n:["Mars","Saturn","Jupiter"],e:["Moon"]},Jupiter:{f:["Sun","Moon","Mars"],n:["Saturn"],e:["Mercury","Venus"]},Venus:{f:["Mercury","Saturn"],n:["Mars","Jupiter"],e:["Sun","Moon"]},Saturn:{f:["Mercury","Venus"],n:["Jupiter"],e:["Sun","Moon","Mars"]},Rahu:{f:["Mercury","Venus","Saturn"],n:["Jupiter"],e:["Sun","Moon","Mars"]},Ketu:{f:["Mercury","Venus","Saturn"],n:["Jupiter"],e:["Sun","Moon","Mars"]}};
 const YONI_ENEMY = {Horse:"Buffalo",Elephant:"Lion",Goat:"Dog",Snake:"Mongoose",Dog:"Goat",Cat:"Rat",Rat:"Cat",Cow:"Tiger",Buffalo:"Horse",Tiger:"Cow",Deer:"Dog",Monkey:"Lion",Lion:"Elephant",Mongoose:"Snake"};
 
+// ── Jyotishi's notes: strengths and struggles by koota ──
+const KOOTA_READ = {
+  'Varna':        { good: 'Your spiritual outlooks sit comfortably together; there is natural respect for each other\'s values.',
+                    low:  'Your values and sense of self may pull in different directions at times; honouring each other\'s way of seeing things helps.' },
+  'Vashya':       { good: 'There is a natural pull between you, an easy attraction and a gentle influence on one another.',
+                    low:  'Neither falls easily under the other\'s sway, so closeness grows through attention and effort rather than by itself.' },
+  'Tara':         { good: 'Your birth stars favour each other, an old sign of shared wellbeing and good fortune over time.',
+                    low:  'Your birth stars are less supportive; look after health and routine, and don\'t let small strains linger.' },
+  'Yoni':         { good: 'Physical ease and comfort with each other come naturally.',
+                    low:  'Your instinctive natures differ; intimacy and comfort deepen with patience and honest conversation.' },
+  'Graha Maitri': { good: 'Your Moon-sign lords are friends, so your minds meet easily; friendship is a strong foundation here.',
+                    low:  'You may think on different wavelengths; making time to truly listen will bridge the gap.' },
+  'Gana':         { good: 'Your temperaments are in tune; daily life and its rhythms feel shared rather than negotiated.',
+                    low:  'Your temperaments differ, one gentler and one more fiery; patience during disagreements is key.' },
+  'Bhakoot':      { good: 'Your Moon signs sit well together, supporting emotional closeness and shared prosperity.',
+                    low:  'Your Moon signs fall in a challenging pattern; emotional and money matters ask for extra care and understanding.' },
+  'Nadi':         { good: 'Your Nadis differ, traditionally the most auspicious sign for health and family.',
+                    low:  'You share the same Nadi; tradition advises care around health and family, and often suggests remedies.' },
+};
+const ELEMENT = ['Fire', 'Earth', 'Air', 'Water'];   // Aries Fire, Taurus Earth, Gemini Air, Cancer Water, …
+const ELEMENT_READ = {
+  'Fire|Fire':   'Two fiery Moons: passion and enthusiasm abound, though tempers can flare just as quickly.',
+  'Earth|Earth': 'Two earthy Moons: steady, practical and loyal; just remember to make room for spontaneity.',
+  'Air|Air':     'Two airy Moons: endless conversation and shared ideas; grounding plans in action will help.',
+  'Water|Water': 'Two watery Moons: a deep, unspoken understanding; take care not to amplify each other\'s moods.',
+  'Fire|Air':    'Fire and Air Moons: one inspires, the other fans the flame; a lively, sociable bond.',
+  'Earth|Water': 'Earth and Water Moons: a nurturing pairing; one offers security, the other depth of feeling.',
+  'Fire|Earth':  'Fire and Earth Moons: one rushes, one steadies; together you can build much if you respect each other\'s pace.',
+  'Fire|Water':  'Fire and Water Moons: passion meets sensitivity; gentle words keep the steam from rising.',
+  'Earth|Air':   'Earth and Air Moons: ideas meet practicality; balance thinking with doing and you complement each other well.',
+  'Air|Water':   'Air and Water Moons: head meets heart; learn to speak each other\'s emotional language.',
+};
+function coupleReading(nk1, nk2, kootas) {
+  const e1 = ELEMENT[RASHIS.indexOf(nk1.rashi) % 4], e2 = ELEMENT[RASHIS.indexOf(nk2.rashi) % 4];
+  const key = ELEMENT_READ[`${e1}|${e2}`] ? `${e1}|${e2}` : `${e2}|${e1}`;
+  const strengths = kootas.filter(k => k.score / k.max >= 0.67).map(k => ({ k: k.name, text: KOOTA_READ[k.name].good }));
+  const struggles = kootas.filter(k => k.score / k.max < 0.34).map(k => ({ k: k.name, text: KOOTA_READ[k.name].low }));
+  return {
+    moons: `${nk1.rashi} Moon & ${nk2.rashi} Moon`,
+    elements: ELEMENT_READ[key],
+    strengths: strengths.length ? strengths : [{ k: 'Overall', text: 'No single area stands out strongly; your bond is built steadily, through choice and care rather than ease.' }],
+    struggles: struggles.length ? struggles : [{ k: 'Overall', text: 'No area shows a marked weakness; ordinary give-and-take is all this match asks of you.' }],
+  };
+}
+
 // ── Stored geocoded locations ──
 const geoData = { 1: null, 2: null };
 
@@ -615,14 +689,23 @@ function setupAutocomplete(inputId, listId, personNum) {
 
 async function fetchPlaces(q, list, input, personNum) {
   try {
-    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=6&addressdetails=1`;
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=12&addressdetails=1`;
     const res = await fetch(url, { headers: { 'User-Agent': 'KundaliMilan/1.0' } });
     const data = await res.json();
     list.innerHTML = '';
     if (!data.length) { list.innerHTML = '<div class="ac-spinner">No results found</div>'; return; }
-    data.forEach(place => {
-      const main = place.address.city || place.address.town || place.address.village || place.address.county || place.display_name.split(',')[0];
-      const sub = [place.address.state, place.address.country].filter(Boolean).join(', ');
+    // Nominatim often returns the same town twice (e.g. the city node and its boundary): keep one per label.
+    const seen = new Set();
+    data.map(place => {
+      const a = place.address || {};
+      const main = a.city || a.town || a.village || a.municipality || a.county || place.display_name.split(',')[0];
+      const sub = [a.state, a.country].filter(Boolean).join(', ');
+      return { place, main, sub };
+    }).filter(({ main, sub }) => {
+      const key = (main + '|' + sub).toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key); return true;
+    }).slice(0, 6).forEach(({ place, main, sub }) => {
       const item = document.createElement('div');
       item.className = 'ac-item';
       item.innerHTML = `<div class="ac-main">${main}</div><div class="ac-sub">${sub}</div>`;
@@ -845,12 +928,19 @@ async function calculate() {
       ds.innerHTML = `<div class="all-good"><span>✓</span><span>No major doshas detected.</span></div>`;
     }
 
+    const reading = coupleReading(nk1, nk2, kootas);
+    const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    document.getElementById('notesMoons').innerHTML = `<strong>${esc(reading.moons)}</strong>${esc(reading.elements)}`;
+    const items = list => list.map(n => `<div class="note-item"><b>${n.k}.</b> ${esc(n.text)}</div>`).join('');
+    document.getElementById('notesGood').innerHTML = items(reading.strengths);
+    document.getElementById('notesCare').innerHTML = items(reading.struggles);
+
     lastMatch = {
       p: [
         { name: name1, dob: dob1, tob: tob1, place: geoData[1].name, lat: geoData[1].lat, lon: geoData[1].lon, utc: utc1, nk: nk1 },
         { name: name2, dob: dob2, tob: tob2, place: geoData[2].name, lat: geoData[2].lat, lon: geoData[2].lon, utc: utc2, nk: nk2 },
       ],
-      kootas, total, verdict, desc, doshas,
+      kootas, total, verdict, desc, doshas, reading,
     };
 
     document.getElementById('results').style.display = 'block';
@@ -1142,7 +1232,35 @@ function buildMilanPDF(jsPDF) {
     font('times', 'bold', 10.5); col(TEAL); doc.text('No major doshas detected (Nadi, Bhakoot, Gana).', M + 5, y + 1.6);
     y += 9;
   }
-  y += 7;
+  footer();
+
+  // ── PAGE 3: Jyotishi's notes, guide ──
+  newPage();
+  y = section("Jyotishi's Notes", 'how you may be together', 24);
+  font('helvetica', 'bold', 7.5); col(GOLD);
+  doc.text(t(R.reading.moons).toUpperCase(), W / 2, y + 1, { align: 'center', charSpace: 0.4 });
+  font('times', 'italic', 11); col(INK);
+  const el = doc.splitTextToSize(t(R.reading.elements), W - 2 * M - 20);
+  doc.text(el, W / 2, y + 7, { align: 'center' });
+  y += 12 + el.length * 4.8;
+  const noteBlock = (title, list, c) => {
+    font('helvetica', 'bold', 8); col(c); doc.text(title.toUpperCase(), M + 4, y, { charSpace: 0.3 });
+    const top = y - 3.5; y += 6;
+    list.forEach(n => {
+      font('times', 'bold', 10.5); col(INK); doc.text(t(n.k), M + 4, y);
+      font('times', 'normal', 10); col([80, 65, 45]);
+      const lines = doc.splitTextToSize(t(n.text), W - 2 * M - 8);
+      doc.text(lines, M + 4, y + 4.6);
+      y += 7 + lines.length * 4.4;
+    });
+    doc.setDrawColor(...c); doc.setLineWidth(0.7); doc.line(M + 0.5, top, M + 0.5, y - 4);
+    y += 4;
+  };
+  noteBlock('Where you flow together', R.reading.strengths, TEAL);
+  noteBlock('Where you may need care', R.reading.struggles, RUST);
+  font('times', 'italic', 7.8); col(FAINT);
+  doc.text('Traditional, general indications from the Moon signs and nakshatras. A full reading weighs both complete charts.', M, y);
+  y += 14;
 
   y = section('Score Guide', 'interpreting the gunas', y);
   [['32 - 36', 'Excellent match', 'Highly auspicious, considered ideal for marriage.', TEAL],
