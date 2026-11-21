@@ -32,6 +32,11 @@ Below 18 → Usually not recommended
 7. Bhakoot (7 pts) — Rashi position relative to each other (2-12, 5-9, 6-8 patterns are considered inauspicious). Full 7 pts for compatible positions.
 8. Nadi (8 pts) — Three Nadis: Aadi, Madhya, Antya. Same Nadi = 0 points (considered a serious dosha), different Nadi = full 8 points.
 
+**Find my 36-guna match (reverse match)**
+Enter only the first person's birth details and the tool finds the partner Moon nakshatra and pada that score highest with them, then lists birth dates and times within 5 years of their age, in their own city, when the Moon was there. The Moon's position doesn't depend on where you are, so birthplace only sets the local clock time.
+
+A full 36 needs everything to line up at once (same yoni and gana, different nadi, friendly and well-placed Moon signs). Only Chitra (Libra) with Vishakha (Libra) meets all of these, so most people's best possible score is between 28 and 33; the tool shows that best score.
+
 **Important Notes**
 
 Nadi Dosha (both same Nadi) and Bhakoot Dosha are considered serious and sometimes require remedies even if the total score is good.
