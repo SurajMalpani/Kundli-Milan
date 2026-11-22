@@ -1,0 +1,23 @@
+# Kundali Milan: Find Your Perfect Match
+
+> A free Kundali Milan (Kundli matching) calculator. It scores marriage compatibility across the 8 Ashtakoot kootas (36 gunas) and can suggest the birth date and time of your perfect 36-guna match.
+
+Live: https://match.vayuputra.co/
+
+## Features
+
+- Ashtakoot Milan score out of 36 with a breakdown of all 8 kootas: Varna, Vashya, Tara, Yoni, Graha Maitri, Gana, Bhakoot, and Nadi
+- Checks for doshas such as Nadi, Bhakoot, and Manglik
+- Perfect-match finder that suggests the birth date and time of a 36-guna match
+- Download the result as a PDF or share it
+
+## Useful for
+
+- Kundli matching for marriage by birth details
+- Understanding which kootas score well or poorly
+- Finding what birth details would make a perfect astrological match
+
+## About
+
+- Free, no sign-up, nothing to install; runs entirely in your browser.
+- Made by [Suraj Malpani](https://surajmalpani.github.io/), published by [Vayuputra](https://vayuputra.co/), which lists all its free tools.
